@@ -18,10 +18,11 @@
     margin: 0 auto 20px auto;
     background: white;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, 63mm);
     gap: 4mm;
+    justify-content: center;
+    align-content: flex-start;
   }
   .card {
     width: 63mm;
@@ -97,6 +98,21 @@
     font-weight: bold;
     z-index: 2;
   }
+  
+  .revealed-mark {
+    position: absolute;
+    bottom: 2mm;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    font-weight: bold;
+    color: var(--c);
+    background: white;
+    padding: 1px 4px;
+    border: 1px solid var(--c);
+    border-radius: 2px;
+    z-index: 5;
+  }
 
   /* Special Cards */
   .card-special {
@@ -159,14 +175,6 @@
     margin: 0 4mm;
     text-align: left;
   }
-  .player-label {
-    position: absolute;
-    bottom: 1mm;
-    right: 2mm;
-    font-size: 0.6em;
-    color: #999;
-    z-index: 10;
-  }
 </style>
 </head>
 <body>
@@ -204,7 +212,7 @@
     赤 / R
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -239,7 +247,7 @@
     緑 / G
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -274,7 +282,7 @@
     青 / B
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #d32f2f">
@@ -309,7 +317,7 @@
     赤 / R
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -344,7 +352,7 @@
     緑 / G
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -379,7 +387,7 @@
     青 / B
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #d32f2f">
@@ -414,7 +422,7 @@
     赤 / R
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -449,7 +457,7 @@
     緑 / G
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -484,7 +492,7 @@
     青 / B
   </div>
   
-  <div class="player-label">P1</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 </div>
 <div class="page">
@@ -504,7 +512,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -522,7 +529,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -540,7 +546,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -558,7 +563,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -576,7 +580,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -594,7 +597,6 @@
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -612,7 +614,6 @@
   <div class="footer">
     能力・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -630,7 +631,6 @@
   <div class="footer">
     能力・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -648,7 +648,6 @@
   <div class="footer">
     能力・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
 </div>
 </div>
 <div class="page">
@@ -668,7 +667,6 @@
   <div class="footer">
     能力・相手がguardなら無効化
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -686,7 +684,6 @@
   <div class="footer">
     能力・相手がguardなら無効化
   </div>
-  <div class="player-label">P1</div>
 </div>
 
 <div class="card card-special">
@@ -704,544 +701,6 @@
   <div class="footer">
     能力・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P1</div>
-</div>
-</div>
-<div class="page">
-
-<div class="card card-rps" style="--c: #d32f2f">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    赤 / R
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #388e3c">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    緑 / G
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #1976d2">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✊</div>
-    <div class="rps-title">
-       グー <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✌️ チョキ</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✋ パー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    青 / B
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #d32f2f">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    赤 / R
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #388e3c">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    緑 / G
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #1976d2">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✌️</div>
-    <div class="rps-title">
-       チョキ <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✋ パー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✊ グー</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    青 / B
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #d32f2f">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">R</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    赤 / R
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #388e3c">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">G</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    緑 / G
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-rps" style="--c: #1976d2">
-  <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- 斜線を左下(0,100)から右上(100,0)へ -->
-    <line x1="0" y1="100" x2="100" y2="0" stroke="var(--c)" stroke-width="0.8" stroke-dasharray="2,2" />
-  </svg>
-  
-  <div class="half top">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="half bottom">
-    <div class="emoji-big">✋</div>
-    <div class="rps-title">
-       パー <span class="color-circle">B</span>
-    </div>
-    <div class="win-lose">
-      <div class="win-line"><span class="win-label">WIN</span> ✊ グー</div>
-      <div class="lose-line"><span class="lose-label">LOSE</span> ✌️ チョキ</div>
-    </div>
-  </div>
-
-  <div class="center-tag">
-    青 / B
-  </div>
-  
-  <div class="player-label">P2</div>
-</div>
-</div>
-<div class="page">
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">グーで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">グー ✊</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✊</div>
-    <div class="body-text">
-      この回の<b>本命が グー</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">グーで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">グー ✊</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✊</div>
-    <div class="body-text">
-      この回の<b>本命が グー</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">チョキで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">チョキ ✌️</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✌️</div>
-    <div class="body-text">
-      この回の<b>本命が チョキ</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">チョキで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">チョキ ✌️</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✌️</div>
-    <div class="body-text">
-      この回の<b>本命が チョキ</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">パーで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">パー ✋</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✋</div>
-    <div class="body-text">
-      この回の<b>本命が パー</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #a67c00;">
-    <div class="header-small">効果カード / EFFECT</div>
-    <div class="header-title">パーで勝つ <span class="badge">+1</span></div>
-    <div class="header-subtitle">パー ✋</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">✋</div>
-    <div class="body-text">
-      この回の<b>本命が パー</b> で勝ったとき、追加で <b>+1</b>。
-    </div>
-  </div>
-  <div class="footer">
-    公開して使用・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
-    <div class="header-subtitle">開示</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">👁️</div>
-    <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
-    </div>
-  </div>
-  <div class="footer">
-    能力・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
-    <div class="header-subtitle">開示</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">👁️</div>
-    <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
-    </div>
-  </div>
-  <div class="footer">
-    能力・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
-    <div class="header-subtitle">開示</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">👁️</div>
-    <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
-    </div>
-  </div>
-  <div class="footer">
-    能力・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
-</div>
-</div>
-<div class="page">
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guess（手） <span class="badge">+1</span></div>
-    <div class="header-subtitle">封印当て</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">🎯</div>
-    <div class="body-text">
-      相手の<b>封印の「手」</b>を宣言。当たれば <b>+1</b>。当否のみ分かる（封印は見えない）。
-    </div>
-  </div>
-  <div class="footer">
-    能力・相手がguardなら無効化
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guess（手＋色） <span class="badge">+2 / +3</span></div>
-    <div class="header-subtitle">封印当て</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">🎯</div>
-    <div class="body-text">
-      相手の<b>封印の「手＋色」</b>を宣言。当たれば <b>+2</b>（1〜3ターンは<b>+3</b>）。当否のみ分かる。
-    </div>
-  </div>
-  <div class="footer">
-    能力・相手がguardなら無効化
-  </div>
-  <div class="player-label">P2</div>
-</div>
-
-<div class="card card-special">
-  <div class="header" style="background: #3e4f5e;">
-    <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guard guess <span class="badge">+1</span></div>
-    <div class="header-subtitle">防御</div>
-  </div>
-  <div class="body">
-    <div class="body-icon">🛡️</div>
-    <div class="body-text">
-      このターンに相手が<b>自分の封印をguess</b>してきたら、その<b>guessを無効化</b>し自分に <b>+1</b>。撃たれなければ空振り。
-    </div>
-  </div>
-  <div class="footer">
-    能力・毎ターン必ず1枚・使ったら捨てる
-  </div>
-  <div class="player-label">P2</div>
 </div>
 </div>
 
