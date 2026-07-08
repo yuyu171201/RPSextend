@@ -136,12 +136,9 @@ def generate_html():
     font-weight: bold;
     color: var(--c);
     background: white;
-    width: 1.6em;
-    height: 1.6em;
-    line-height: 1.6em;
-    text-align: center;
+    padding: 1mm 3mm;
     border: 1px solid var(--c);
-    border-radius: 50%;
+    border-radius: 1em;
     z-index: 5;
   }
 
@@ -211,11 +208,11 @@ def generate_html():
 <body>
 """
 
-    cards = []
+    rps_cards = []
     # RPS (1人分 = 9枚)
     for rps_name, icon, win, lose in rps_data:
         for color_char, color_ja, color_hex in colors:
-            cards.append(f"""
+            rps_cards.append(f"""
 <div class="card card-rps" style="--c: {color_hex}">
   <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
     <!-- 斜線を左下(0,100)から右上(100,0)へ -->
@@ -248,13 +245,15 @@ def generate_html():
     {color_ja} / {color_char}
   </div>
   
-  <div class="revealed-mark">公</div>
+  <div class="revealed-mark">公開</div>
 </div>
 """)
+
+    effect_cards = []
     # Effects (1人分 = 6枚)
     for effect_name, icon, rps_name in effect_data:
         for _ in range(2):
-            cards.append(f"""
+            effect_cards.append(f"""
 <div class="card card-special">
   <div class="header" style="background: #a67c00;">
     <div class="header-small">効果カード / EFFECT</div>
@@ -272,11 +271,13 @@ def generate_html():
   </div>
 </div>
 """)
+
+    ability_cards = []
     # Abilities (1人分 = 6枚)
     for ab_name, subtitle, badge, icon, text, footer, count in ability_data:
         badge_html = f'<span class="badge">{badge}</span>' if badge else ''
         for _ in range(count):
-            cards.append(f"""
+            ability_cards.append(f"""
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
@@ -295,11 +296,12 @@ def generate_html():
 </div>
 """)
     
-    # Paginate (9 cards per page)
-    for i in range(0, len(cards), 9):
-        html += '<div class="page">\n'
-        html += "".join(cards[i:i+9])
-        html += '</div>\n'
+    # Paginate separately (9 cards per page)
+    for card_group in [rps_cards, effect_cards, ability_cards]:
+        for i in range(0, len(card_group), 9):
+            html += '<div class="page">\n'
+            html += "".join(card_group[i:i+9])
+            html += '</div>\n'
 
     html += """
 </body>
