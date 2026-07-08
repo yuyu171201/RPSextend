@@ -103,14 +103,17 @@
     position: absolute;
     bottom: 2mm;
     left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75em;
+    transform: translateX(-50%) rotate(180deg);
+    font-size: 0.8em;
     font-weight: bold;
     color: var(--c);
     background: white;
-    padding: 1px 4px;
+    width: 1.6em;
+    height: 1.6em;
+    line-height: 1.6em;
+    text-align: center;
     border: 1px solid var(--c);
-    border-radius: 2px;
+    border-radius: 50%;
     z-index: 5;
   }
 
@@ -162,7 +165,7 @@
     margin: 1mm 0 3mm 0;
   }
   .body-text {
-    font-size: 0.75em;
+    font-size: 0.8em;
     text-align: left;
     line-height: 1.5;
     width: 100%;
@@ -212,7 +215,7 @@
     赤 / R
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -247,7 +250,7 @@
     緑 / G
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -282,7 +285,7 @@
     青 / B
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #d32f2f">
@@ -317,7 +320,7 @@
     赤 / R
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -352,7 +355,7 @@
     緑 / G
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -387,7 +390,7 @@
     青 / B
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #d32f2f">
@@ -422,7 +425,7 @@
     赤 / R
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #388e3c">
@@ -457,7 +460,7 @@
     緑 / G
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 
 <div class="card card-rps" style="--c: #1976d2">
@@ -492,7 +495,7 @@
     青 / B
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 </div>
 <div class="page">
@@ -602,13 +605,13 @@
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
+    <div class="header-title">覗き見 </div>
     <div class="header-subtitle">開示</div>
   </div>
   <div class="body">
     <div class="body-icon">👁️</div>
     <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
+      相手の非公開手札を開示させる。<br>①相手が1枚選んで開示<br>②自分が2枚指定して開示<br><span style='font-size:0.8em'>※非公開札は常に2枚以上残す</span>
     </div>
   </div>
   <div class="footer">
@@ -619,13 +622,13 @@
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
+    <div class="header-title">覗き見 </div>
     <div class="header-subtitle">開示</div>
   </div>
   <div class="body">
     <div class="body-icon">👁️</div>
     <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
+      相手の非公開手札を開示させる。<br>①相手が1枚選んで開示<br>②自分が2枚指定して開示<br><span style='font-size:0.8em'>※非公開札は常に2枚以上残す</span>
     </div>
   </div>
   <div class="footer">
@@ -636,13 +639,13 @@
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">show hand </div>
+    <div class="header-title">覗き見 </div>
     <div class="header-subtitle">開示</div>
   </div>
   <div class="body">
     <div class="body-icon">👁️</div>
     <div class="body-text">
-      相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。
+      相手の非公開手札を開示させる。<br>①相手が1枚選んで開示<br>②自分が2枚指定して開示<br><span style='font-size:0.8em'>※非公開札は常に2枚以上残す</span>
     </div>
   </div>
   <div class="footer">
@@ -655,47 +658,47 @@
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guess（手） <span class="badge">+1</span></div>
+    <div class="header-title">探偵（手） <span class="badge">+1</span></div>
     <div class="header-subtitle">封印当て</div>
   </div>
   <div class="body">
     <div class="body-icon">🎯</div>
     <div class="body-text">
-      相手の<b>封印の「手」</b>を宣言。当たれば <b>+1</b>。当否のみ分かる（封印は見えない）。
+      相手の<b>封印の「手」</b>を宣言。<br>当たれば <b>+1点</b>（当否のみ判明）。
     </div>
   </div>
   <div class="footer">
-    能力・相手がguardなら無効化
+    能力・相手が盾なら無効化
   </div>
 </div>
 
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guess（手＋色） <span class="badge">+2 / +3</span></div>
+    <div class="header-title">探偵（手＋色） <span class="badge">+2 / +3</span></div>
     <div class="header-subtitle">封印当て</div>
   </div>
   <div class="body">
     <div class="body-icon">🎯</div>
     <div class="body-text">
-      相手の<b>封印の「手＋色」</b>を宣言。当たれば <b>+2</b>（1〜3ターンは<b>+3</b>）。当否のみ分かる。
+      相手の<b>封印の「手＋色」</b>を宣言。<br>当たれば <b>+2点</b><br><span style='font-size:0.8em'>（1〜3ターン目は<b>+3点</b>、当否のみ判明）</span>
     </div>
   </div>
   <div class="footer">
-    能力・相手がguardなら無効化
+    能力・相手が盾なら無効化
   </div>
 </div>
 
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
-    <div class="header-title">guard guess <span class="badge">+1</span></div>
+    <div class="header-title">盾 <span class="badge">+1</span></div>
     <div class="header-subtitle">防御</div>
   </div>
   <div class="body">
     <div class="body-icon">🛡️</div>
     <div class="body-text">
-      このターンに相手が<b>自分の封印をguess</b>してきたら、その<b>guessを無効化</b>し自分に <b>+1</b>。撃たれなければ空振り。
+      相手の<b>探偵</b>を無効化し、<b>自分に+1点</b>。<br><span style='font-size:0.8em'>（相手が探偵を使わなければ不発）</span>
     </div>
   </div>
   <div class="footer">
