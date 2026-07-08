@@ -7,7 +7,6 @@ def generate_html():
         ("B", "青", "#1976d2")
     ]
     
-    # "Rock,Paper,Scissorはグー・チョキ・パーのみ書いて" -> English names omitted.
     rps_data = [
         ("グー", "✊", "✌️ チョキ", "✋ パー"),
         ("チョキ", "✌️", "✋ パー", "✊ グー"),
@@ -47,10 +46,11 @@ def generate_html():
     margin: 0 auto 20px auto;
     background: white;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, 63mm);
     gap: 4mm;
+    justify-content: center;
+    align-content: flex-start;
   }
   .card {
     width: 63mm;
@@ -126,6 +126,21 @@ def generate_html():
     font-weight: bold;
     z-index: 2;
   }
+  
+  .revealed-mark {
+    position: absolute;
+    bottom: 2mm;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    font-weight: bold;
+    color: var(--c);
+    background: white;
+    padding: 1px 4px;
+    border: 1px solid var(--c);
+    border-radius: 2px;
+    z-index: 5;
+  }
 
   /* Special Cards */
   .card-special {
@@ -188,25 +203,16 @@ def generate_html():
     margin: 0 4mm;
     text-align: left;
   }
-  .player-label {
-    position: absolute;
-    bottom: 1mm;
-    right: 2mm;
-    font-size: 0.6em;
-    color: #999;
-    z-index: 10;
-  }
 </style>
 </head>
 <body>
 """
 
-    for player in [1, 2]:
-        cards = []
-        # RPS
-        for rps_name, icon, win, lose in rps_data:
-            for color_char, color_ja, color_hex in colors:
-                cards.append(f"""
+    cards = []
+    # RPS (1人分 = 9枚)
+    for rps_name, icon, win, lose in rps_data:
+        for color_char, color_ja, color_hex in colors:
+            cards.append(f"""
 <div class="card card-rps" style="--c: {color_hex}">
   <svg class="diagonal-line" viewBox="0 0 100 100" preserveAspectRatio="none">
     <!-- 斜線を左下(0,100)から右上(100,0)へ -->
@@ -239,13 +245,13 @@ def generate_html():
     {color_ja} / {color_char}
   </div>
   
-  <div class="player-label">P{player}</div>
+  <div class="revealed-mark">⚪︎公</div>
 </div>
 """)
-        # Effects
-        for effect_name, icon, rps_name in effect_data:
-            for _ in range(2):
-                cards.append(f"""
+    # Effects (1人分 = 6枚)
+    for effect_name, icon, rps_name in effect_data:
+        for _ in range(2):
+            cards.append(f"""
 <div class="card card-special">
   <div class="header" style="background: #a67c00;">
     <div class="header-small">効果カード / EFFECT</div>
@@ -261,14 +267,13 @@ def generate_html():
   <div class="footer">
     公開して使用・毎ターン必ず1枚・使ったら捨てる
   </div>
-  <div class="player-label">P{player}</div>
 </div>
 """)
-        # Abilities
-        for ab_name, subtitle, badge, icon, text, footer, count in ability_data:
-            badge_html = f'<span class="badge">{badge}</span>' if badge else ''
-            for _ in range(count):
-                cards.append(f"""
+    # Abilities (1人分 = 6枚)
+    for ab_name, subtitle, badge, icon, text, footer, count in ability_data:
+        badge_html = f'<span class="badge">{badge}</span>' if badge else ''
+        for _ in range(count):
+            cards.append(f"""
 <div class="card card-special">
   <div class="header" style="background: #3e4f5e;">
     <div class="header-small">能力カード / ABILITY</div>
@@ -284,15 +289,14 @@ def generate_html():
   <div class="footer">
     {footer}
   </div>
-  <div class="player-label">P{player}</div>
 </div>
 """)
-        
-        # Paginate (9 cards per page)
-        for i in range(0, len(cards), 9):
-            html += '<div class="page">\n'
-            html += "".join(cards[i:i+9])
-            html += '</div>\n'
+    
+    # Paginate (9 cards per page)
+    for i in range(0, len(cards), 9):
+        html += '<div class="page">\n'
+        html += "".join(cards[i:i+9])
+        html += '</div>\n'
 
     html += """
 </body>
