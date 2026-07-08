@@ -20,10 +20,10 @@ def generate_html():
     ]
 
     ability_data = [
-        ("show hand", "開示", "", "👁️", "相手の手札を開示させる。<b>相手が1枚</b>を選んで開示 →<b>自分が2枚</b>指定して開示（最大3枚）。ただし相手の非公開札は<b>常に2枚以上</b>残す。", "能力・毎ターン必ず1枚・使ったら捨てる", 3),
-        ("guess（手）", "封印当て", "+1", "🎯", "相手の<b>封印の「手」</b>を宣言。当たれば <b>+1</b>。当否のみ分かる（封印は見えない）。", "能力・相手がguardなら無効化", 1),
-        ("guess（手＋色）", "封印当て", "+2 / +3", "🎯", "相手の<b>封印の「手＋色」</b>を宣言。当たれば <b>+2</b>（1〜3ターンは<b>+3</b>）。当否のみ分かる。", "能力・相手がguardなら無効化", 1),
-        ("guard guess", "防御", "+1", "🛡️", "このターンに相手が<b>自分の封印をguess</b>してきたら、その<b>guessを無効化</b>し自分に <b>+1</b>。撃たれなければ空振り。", "能力・毎ターン必ず1枚・使ったら捨てる", 1)
+        ("覗き見", "開示", "", "👁️", "相手の非公開手札を開示させる。<br>①相手が1枚選んで開示<br>②自分が2枚指定して開示<br><span style='font-size:0.8em'>※非公開札は常に2枚以上残す</span>", "能力・毎ターン必ず1枚・使ったら捨てる", 3),
+        ("探偵（手）", "封印当て", "+1", "🎯", "相手の<b>封印の「手」</b>を宣言。<br>当たれば <b>+1点</b>（当否のみ判明）。", "能力・相手が盾なら無効化", 1),
+        ("探偵（手＋色）", "封印当て", "+2 / +3", "🎯", "相手の<b>封印の「手＋色」</b>を宣言。<br>当たれば <b>+2点</b><br><span style='font-size:0.8em'>（1〜3ターン目は<b>+3点</b>、当否のみ判明）</span>", "能力・相手が盾なら無効化", 1),
+        ("盾", "防御", "+1", "🛡️", "相手の<b>探偵</b>を無効化し、<b>自分に+1点</b>。<br><span style='font-size:0.8em'>（相手が探偵を使わなければ不発）</span>", "能力・毎ターン必ず1枚・使ったら捨てる", 1)
     ]
 
     html = """<!DOCTYPE html>
@@ -131,14 +131,17 @@ def generate_html():
     position: absolute;
     bottom: 2mm;
     left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75em;
+    transform: translateX(-50%) rotate(180deg);
+    font-size: 0.8em;
     font-weight: bold;
     color: var(--c);
     background: white;
-    padding: 1px 4px;
+    width: 1.6em;
+    height: 1.6em;
+    line-height: 1.6em;
+    text-align: center;
     border: 1px solid var(--c);
-    border-radius: 2px;
+    border-radius: 50%;
     z-index: 5;
   }
 
@@ -190,7 +193,7 @@ def generate_html():
     margin: 1mm 0 3mm 0;
   }
   .body-text {
-    font-size: 0.75em;
+    font-size: 0.8em;
     text-align: left;
     line-height: 1.5;
     width: 100%;
@@ -245,7 +248,7 @@ def generate_html():
     {color_ja} / {color_char}
   </div>
   
-  <div class="revealed-mark">⚪︎公</div>
+  <div class="revealed-mark">公</div>
 </div>
 """)
     # Effects (1人分 = 6枚)
