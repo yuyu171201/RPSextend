@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rps-online-web",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["web_server.py", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000,
+      "cwd": "Online"
+    }
+  ]
+}
