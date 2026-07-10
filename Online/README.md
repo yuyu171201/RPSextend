@@ -151,3 +151,45 @@ ssh <user>@<サーバー> 'systemctl status rps-online --no-pager | head -n 12'
   `sudo systemctl stop nginx` も併用してください。
 - このサービスは `Restart=always` 設定のため、プロセスがクラッシュしても自動復帰します。
   完全に止めたいときは手動 kill ではなく必ず `systemctl stop` を使ってください。
+
+### 現在のプレイヤーを確認する（管理用ステータス）
+
+`GET /admin/status` で、いま接続中のプレイヤー（対戦中／待機中）を JSON で確認できます。
+
+```bash
+# サーバー上（SSHログイン後）: 内部ポートを直接叩く
+curl -s http://127.0.0.1:8000/admin/status | python3 -m json.tool
+```
+
+出力例:
+
+```json
+{
+  "counts": { "total": 3, "waiting": 1, "playing": 2, "dead": 0 },
+  "waiting": [ { "name": "キャロル", "id": "4c1ae005", "idle_sec": 0.3, "age_sec": 12.0, "dead": false } ],
+  "matches": [ { "match": "4fc147e9",
+                 "players": [ { "name": "アリス", "id": "ccd7189a", ... },
+                              { "name": "ボブ",   "id": "56e75a23", ... } ] } ]
+}
+```
+
+- `counts`: 合計 / 待機中 / 対戦中 / 切断待ち の人数。
+- `matches`: 対戦中のペア（`match` が同じ2人が対戦相手）。`waiting`: マッチ待ちの人。
+- `idle_sec` はポーリング最終受信からの経過秒。20秒を超えると reaper が切断扱いにします。
+
+**アクセス制御（既定で安全）:**
+- 環境変数 `RPS_ADMIN_TOKEN` **未設定**時は、`/admin/status` は**サーバー内からの loopback 直叩き（`127.0.0.1:8000`）のみ許可**。
+  Nginx 経由の公開URLからは `403 Forbidden`（`X-Forwarded-For` が付くため）。
+- 公開URL経由でも見たい場合は `RPS_ADMIN_TOKEN` を設定し、`?token=` を付けてアクセス:
+
+  ```bash
+  # systemd に環境変数を渡す例（サーバー上）
+  sudo systemctl edit rps-online
+  #   [Service]
+  #   Environment=RPS_ADMIN_TOKEN=<任意の長い文字列>
+  sudo systemctl restart rps-online
+
+  curl -s "https://rps.sumyuu.com/admin/status?token=<上と同じ文字列>" | python3 -m json.tool
+  ```
+
+  ※トークンは個人情報同様に扱い、リポジトリに直書きしないこと。

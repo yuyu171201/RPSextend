@@ -14,6 +14,7 @@ spec.md の中央サーバー方式のまま、クライアントをブラウザ
 
 import argparse
 import json
+import os
 import threading
 import time
 import uuid
@@ -22,10 +23,15 @@ from urllib.parse import urlparse, parse_qs
 
 import engine
 
-# token -> {"session", "tx", "last", "matched", "dead"}
+# token -> {"session", "tx", "last", "matched", "dead", "match", "joined"}
 SESSIONS = {}
 WAITING = []
 LOCK = threading.Lock()
+
+# 管理用ステータス確認トークン（環境変数 RPS_ADMIN_TOKEN）。
+# 未設定なら /admin/status はサーバー内(loopback直叩き)からのみ許可し、
+# Nginx経由(公開URL)からは拒否する。
+ADMIN_TOKEN = os.environ.get("RPS_ADMIN_TOKEN", "").strip()
 
 
 class HttpTransport:
@@ -50,7 +56,9 @@ def _start_match_if_ready():
     if len(WAITING) >= 2:
         t0, t1 = WAITING.pop(0), WAITING.pop(0)
         s0, s1 = SESSIONS[t0], SESSIONS[t1]
+        mid = uuid.uuid4().hex[:8]
         s0["matched"] = s1["matched"] = True
+        s0["match"] = s1["match"] = mid
         threading.Thread(
             target=lambda: engine.Match(s0["session"], s1["session"]).run(),
             daemon=True).start()
@@ -94,6 +102,47 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    # --- 管理用: 現在のプレイヤー確認 ---
+    def _admin_authorized(self, qs):
+        """/admin/* へのアクセス可否。
+        - RPS_ADMIN_TOKEN 設定時: ?token= が一致すれば許可（公開URLでも可）。
+        - 未設定時: Nginx経由(X-Forwarded-For/X-Real-IP 付き)は拒否し、
+          サーバー内からの loopback 直叩きのみ許可。"""
+        if ADMIN_TOKEN:
+            return (qs.get("token") or [""])[0] == ADMIN_TOKEN
+        via_proxy = self.headers.get("X-Forwarded-For") or self.headers.get("X-Real-IP")
+        host = self.client_address[0] if self.client_address else ""
+        return (via_proxy is None) and host in ("127.0.0.1", "::1", "localhost")
+
+    def _admin_status(self):
+        now = time.time()
+        waiting, matches, dead = [], {}, 0
+        with LOCK:
+            for token, rec in SESSIONS.items():
+                name = rec["session"].name
+                info = {
+                    "name": name,
+                    "id": token[:8],
+                    "idle_sec": round(now - rec["last"], 1),
+                    "age_sec": round(now - rec.get("joined", rec["last"]), 1),
+                    "dead": bool(rec.get("dead")),
+                }
+                if rec.get("dead"):
+                    dead += 1
+                if rec.get("matched") and rec.get("match"):
+                    matches.setdefault(rec["match"], []).append(info)
+                elif not rec.get("dead"):
+                    waiting.append(info)
+            total = len(SESSIONS)
+        playing = sum(len(v) for v in matches.values())
+        return {
+            "now": round(now, 1),
+            "counts": {"total": total, "waiting": len(waiting),
+                       "playing": playing, "dead": dead},
+            "waiting": waiting,
+            "matches": [{"match": mid, "players": ps} for mid, ps in matches.items()],
+        }
+
     def _read_body(self):
         length = int(self.headers.get("Content-Length", 0))
         if length <= 0:
@@ -122,6 +171,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._json({"messages": rec["tx"].drain()})
             return
+        if parsed.path == "/admin/status":
+            qs = parse_qs(parsed.query)
+            if not self._admin_authorized(qs):
+                self._json({"error": "forbidden"}, 403)
+                return
+            self._json(self._admin_status())
+            return
         self._json({"error": "not found"}, 404)
 
     def do_POST(self):
@@ -137,6 +193,7 @@ class Handler(BaseHTTPRequestHandler):
                 SESSIONS[token] = {
                     "session": session, "tx": tx, "last": time.time(),
                     "matched": False, "dead": False,
+                    "match": None, "joined": time.time(),
                 }
                 session.msg(f"ようこそ {name} さん。対戦相手を待っています...")
                 WAITING.append(token)
