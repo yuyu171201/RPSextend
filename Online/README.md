@@ -109,3 +109,45 @@ python3 client.py --host 127.0.0.1 --port 5000 --name ボブ
 - 対戦相手の切断検知（残ったプレイヤーへ通知して終了）
 - 連続マッチング（対戦終了後、待機列の次の2人が自動対戦）
 - GUI: カードの色分け表示、リアルタイムの盤面/スコア/ログ更新、相手待ち表示
+
+---
+
+## 本番運用（サーバー常駐・起動/停止）
+
+本番サーバー（OCI + Nginx + Let's Encrypt）では、`web_server.py` を systemd サービス
+**`rps-online`** として常駐させています（構成・デプロイ手順は [`../deploy/`](../deploy/) と
+リポジトリ直下の `CLAUDE.md` を参照）。通信経路は
+`ブラウザ ──https──▶ Nginx(443) ──proxy──▶ 127.0.0.1:8000 (web_server.py)`。
+
+### サーバー上で実行（SSH ログイン後）
+
+```bash
+sudo systemctl start   rps-online   # 起動
+sudo systemctl stop    rps-online   # 停止
+sudo systemctl restart rps-online   # 再起動（コード更新後など）
+systemctl status rps-online --no-pager   # 状態確認
+sudo journalctl -u rps-online -f         # ライブログ
+```
+
+自動起動（OS 再起動時に自動で立ち上がる設定）の切り替え:
+
+```bash
+sudo systemctl enable  rps-online   # OS起動時に自動起動（deploy-rps.sh で設定済み）
+sudo systemctl disable rps-online   # 自動起動をやめる
+```
+
+### 手元から SSH ワンライナーで
+
+```bash
+ssh <user>@<サーバー> 'sudo systemctl start   rps-online'   # 起動
+ssh <user>@<サーバー> 'sudo systemctl stop    rps-online'   # 停止
+ssh <user>@<サーバー> 'sudo systemctl restart rps-online'   # 再起動
+ssh <user>@<サーバー> 'systemctl status rps-online --no-pager | head -n 12'
+```
+
+補足:
+- `stop` はゲームサーバー（`web_server.py`）だけを止めます。Nginx(443) は動いたままなので、
+  停止中にアクセスすると **502 Bad Gateway** が返ります。サイトごと止めるなら
+  `sudo systemctl stop nginx` も併用してください。
+- このサービスは `Restart=always` 設定のため、プロセスがクラッシュしても自動復帰します。
+  完全に止めたいときは手動 kill ではなく必ず `systemctl stop` を使ってください。
