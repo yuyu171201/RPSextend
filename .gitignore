@@ -1,0 +1,10 @@
+# 個人情報・秘密情報（公開リポジトリに入れない）
+deploy/config.env
+
+# OS / エディタ
+.DS_Store
+
+# Python
+Online/.venv/
+__pycache__/
+*.pyc
