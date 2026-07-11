@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "rps-online-web",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": ".venv/bin/python3.12",
       "runtimeArgs": ["web_server.py", "--host", "127.0.0.1", "--port", "8000"],
       "port": 8000,
       "cwd": "Online"

@@ -34,13 +34,22 @@ class Session:
     # --- 送信 ---
     def hello(self, text): self.tx.send({"type": "HELLO", "text": text})
     def msg(self, text): self.tx.send({"type": "MSG", "text": text})
-    def state(self, lines): self.tx.send({"type": "STATE", "lines": lines})
+
+    def state(self, lines, view=None):
+        """盤面を送信。lines=テキスト版(後方互換), view=GUI用の構造化データ。"""
+        obj = {"type": "STATE", "lines": lines}
+        if view is not None:
+            obj["view"] = view
+        self.tx.send(obj)
+
     def gameover(self, text): self.tx.send({"type": "GAMEOVER", "text": text})
 
-    def prompt(self, pid, text, options):
+    def prompt(self, pid, text, options, kind=None):
+        # kind: GUI がカード画像で描画するための選択肢の種別
+        #       ("rps" / "effect" / "ability" / "hand" / "color")。
         self.tx.send({
             "type": "PROMPT", "pid": pid, "text": text,
-            "mode": "select", "options": options,
+            "mode": "select", "kind": kind, "options": options,
         })
 
     def await_choice(self, pid, allowed):
@@ -86,9 +95,55 @@ class Match:
             self._send_board(i)
 
     def _rps_options(self, cards):
-        return [{"key": c.cid, "label": str(c)} for c in cards]
+        # hand/color も持たせ、GUI が RPS ミニカードとして描画できるようにする。
+        return [{"key": c.cid, "label": str(c), "hand": c.hand, "color": c.color}
+                for c in cards]
 
     # ---- 盤面表示 --------------------------------------------------------
+
+    @staticmethod
+    def _card(c):
+        return {"hand": c.hand, "color": c.color}
+
+    def _build_view(self, i):
+        """プレイヤー i 視点の盤面を GUI 用の構造化データにする。
+        秘匿情報（相手の手札・封印の中身）は一切含めない。"""
+        st = self.state
+        me = st.players[i]
+        opp = st.players[st.opp(i)]
+
+        def revealed(pl, c):
+            # 直前ターン or 今ターンに開示された札（上下マーカー相当）
+            return pl.revealed_turn.get(c.cid) in (st.turn, st.turn - 1)
+
+        me_rps = [{"hand": c.hand, "color": c.color, "revealed": revealed(me, c)}
+                  for c in me.rps_hand]
+        opp_revealed = [self._card(c) for c in opp.rps_hand if revealed(opp, c)]
+
+        return {
+            "turn": st.turn,
+            "total": G.GameState.TOTAL_TURNS,
+            "me": {
+                "name": me.name,
+                "score": me.score,
+                "rps": me_rps,
+                "seal": self._card(me.seal) if me.seal else None,
+                "combat": self._card(me.combat) if me.combat else None,
+                "effect": list(me.effect_hand),
+                "ability": list(me.ability_hand),
+                "effect_played": me.effect_played,
+                "ability_played": me.ability_played,
+            },
+            "opp": {
+                "name": opp.name,
+                "score": opp.score,
+                "public": [self._card(c) for c in opp.rps_discard],
+                "hidden": len(opp.rps_hand) + (1 if opp.seal else 0),
+                "revealed": opp_revealed,
+                "effect_used": list(opp.effect_discard),
+                "ability_used": list(opp.ability_discard),
+            },
+        }
 
     def _send_board(self, i):
         st = self.state
@@ -129,22 +184,22 @@ class Match:
         for line in st.log[-6:]:
             L.append("  " + line)
         L.append("=" * 52)
-        self.p[i].state(L)
+        self.p[i].state(L, self._build_view(i))
 
     # ---- 入力ヘルパ ------------------------------------------------------
 
     def prompt_both(self, specs):
-        """specs = {i: (pid, text, options)}。両者に同時要求し、両者の回答を返す。"""
-        for i, (pid, text, options) in specs.items():
-            self.p[i].prompt(pid, text, options)
+        """specs = {i: (pid, text, options, kind)}。両者に同時要求し、両者の回答を返す。"""
+        for i, (pid, text, options, kind) in specs.items():
+            self.p[i].prompt(pid, text, options, kind)
         results = {}
-        for i, (pid, _text, options) in specs.items():
+        for i, (pid, _text, options, _kind) in specs.items():
             allowed = {o["key"] for o in options}
             results[i] = self.p[i].await_choice(pid, allowed)
         return results
 
-    def prompt_one(self, i, pid, text, options):
-        self.p[i].prompt(pid, text, options)
+    def prompt_one(self, i, pid, text, options, kind=None):
+        self.p[i].prompt(pid, text, options, kind)
         allowed = {o["key"] for o in options}
         return self.p[i].await_choice(pid, allowed)
 
@@ -156,7 +211,7 @@ class Match:
         specs = {}
         for i in (0, 1):
             opts = self._rps_options(st.players[i].rps_hand)
-            specs[i] = (f"seal-{st.turn}", "封印するRPSカードを選択:", opts)
+            specs[i] = (f"seal-{st.turn}", "封印するRPSカードを選択:", opts, "rps")
         res = self.prompt_both(specs)
         for i in (0, 1):
             me = st.players[i]
@@ -177,7 +232,7 @@ class Match:
                 if h not in seen:
                     seen.append(h)
                     opts.append({"key": h, "label": f"{h}で勝つ"})
-            specs[i] = (f"effect-{st.turn}", "効果カードを選択:", opts)
+            specs[i] = (f"effect-{st.turn}", "効果カードを選択:", opts, "effect")
         res = self.prompt_both(specs)
         for i in (0, 1):
             me = st.players[i]
@@ -200,7 +255,7 @@ class Match:
                 if a not in seen:
                     seen.append(a)
                     opts.append({"key": a, "label": G.ABILITY_LABEL[a]})
-            specs[i] = (f"ability-{st.turn}", "能力カードを選択:", opts)
+            specs[i] = (f"ability-{st.turn}", "能力カードを選択:", opts, "ability")
         res = self.prompt_both(specs)
         for i in (0, 1):
             me = st.players[i]
@@ -242,7 +297,7 @@ class Match:
         opts = self._rps_options(hand)
         chosen = self.prompt_one(
             target_i, f"showhand-self-{st.turn}-{actor}",
-            "覗き見: 自分から開示する1枚を選んでください:", opts)
+            "覗き見: 自分から開示する1枚を選んでください:", opts, "rps")
         revealed.append(next(c for c in hand if c.cid == chosen))
 
         actor_allow = min(2, max_total - 1)
@@ -253,7 +308,7 @@ class Match:
             opts = self._rps_options(remaining)
             pick = self.prompt_one(
                 actor, f"showhand-force-{st.turn}-{actor}-{n}",
-                f"覗き見: 開示させる相手のカードを指定 ({n + 1}/{actor_allow}):", opts)
+                f"覗き見: 開示させる相手のカードを指定 ({n + 1}/{actor_allow}):", opts, "rps")
             card = next(c for c in remaining if c.cid == pick)
             revealed.append(card)
             remaining.remove(card)
@@ -269,12 +324,12 @@ class Match:
         st = self.state
         hand_opts = [{"key": h, "label": h} for h in G.HANDS]
         ghand = self.prompt_one(
-            actor, f"guess-hand-{st.turn}", "guess: 相手の封印の『手』を予想:", hand_opts)
+            actor, f"guess-hand-{st.turn}", "guess: 相手の封印の『手』を予想:", hand_opts, "hand")
         gcolor = None
         if mode == G.GUESS_HAND_COLOR:
             color_opts = [{"key": c, "label": c} for c in G.COLORS]
             gcolor = self.prompt_one(
-                actor, f"guess-color-{st.turn}", "guess: 相手の封印の『色』を予想:", color_opts)
+                actor, f"guess-color-{st.turn}", "guess: 相手の封印の『色』を予想:", color_opts, "color")
         st.players[actor].guess = (mode, ghand, gcolor)
         self.p[actor].msg(f"guessを宣言: {ghand}{gcolor or ''}（結果は勝負後に判明）")
 
@@ -284,7 +339,7 @@ class Match:
         specs = {}
         for i in (0, 1):
             opts = self._rps_options(st.players[i].rps_hand)
-            specs[i] = (f"combat-{st.turn}", "本命(勝負)のRPSを選択:", opts)
+            specs[i] = (f"combat-{st.turn}", "本命(勝負)のRPSを選択:", opts, "rps")
         res = self.prompt_both(specs)
         for i in (0, 1):
             me = st.players[i]
@@ -334,7 +389,7 @@ class Match:
             specs = {}
             for i in (0, 1):
                 opts = self._rps_options(st.players[i].rps_hand)
-                specs[i] = (f"sd-{rnd}", "出すRPSを選択:", opts)
+                specs[i] = (f"sd-{rnd}", "出すRPSを選択:", opts, "rps")
             res = self.prompt_both(specs)
             picks = []
             for i in (0, 1):

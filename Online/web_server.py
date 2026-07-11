@@ -290,9 +290,68 @@ PAGE = r"""<!doctype html>
   .score{font-size:22px;font-weight:800}
   h2{font-size:14px;color:var(--muted);margin:2px 0 10px;font-weight:600;
      text-transform:uppercase;letter-spacing:1px}
-  #board{white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-     font-size:12.5px;line-height:1.5;background:#f2fcff;border-radius:10px;padding:12px;
-     border:1px solid var(--line);max-height:340px;overflow:auto}
+  #board{font-size:12.5px;line-height:1.5;max-height:560px;overflow:auto}
+  #board .placeholder{color:var(--muted);padding:10px}
+  /* ---- 盤面: ゾーン ---- */
+  .zone{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;
+     background:var(--panel2)}
+  .zone.opp{background:#fbf2f4;border-color:#f2cfd4}
+  .zone.me{background:#eef9fd}
+  .zonehead{display:flex;justify-content:space-between;align-items:baseline;
+     font-weight:800;font-size:13px;margin-bottom:6px}
+  .zonehead .zn{color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.5px}
+  .zonehead .sc{font-size:18px;font-weight:900}
+  .brow{display:flex;gap:8px;align-items:flex-start;margin:8px 0;flex-wrap:wrap}
+  .brow .lbl{font-size:11px;color:var(--muted);font-weight:700;min-width:104px;
+     padding-top:6px;flex:0 0 104px}
+  .cards{display:flex;gap:7px;flex-wrap:wrap;flex:1;min-width:0}
+  .cards.empty{color:var(--muted);font-size:12px;padding-top:6px}
+  /* ---- ミニカード ---- */
+  .mc{position:relative;width:52px;min-height:68px;border-radius:9px;background:#fff;
+     border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;
+     justify-content:center;gap:2px;padding:6px 3px 5px;
+     box-shadow:0 2px 6px rgba(0,60,80,.08)}
+  .mc .em{font-size:22px;line-height:1}
+  .mc .nm{font-size:9.5px;font-weight:800;color:var(--ink);text-align:center;line-height:1.1}
+  .mc .cc{position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;
+     color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center}
+  .mc.rps.aka{border-color:var(--aka)}   .mc.rps.aka .cc{background:var(--aka)}
+  .mc.rps.midori{border-color:var(--midori)} .mc.rps.midori .cc{background:var(--midori)}
+  .mc.rps.ao{border-color:var(--ao)}     .mc.rps.ao .cc{background:var(--ao)}
+  .mc.rps.rev{box-shadow:0 0 0 2px var(--accent),0 2px 6px rgba(0,60,80,.12)}
+  .mc .rev-tag{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+     background:var(--accent);color:#fff;font-size:8.5px;font-weight:800;line-height:1;
+     padding:2px 5px;border-radius:6px;white-space:nowrap}
+  /* カード裏（非公開） */
+  .mc.back{border-color:#8fb3c0;color:#fff;
+     background:repeating-linear-gradient(45deg,#7fc9dd 0 6px,#66bcd3 6px 12px)}
+  .mc.back .q{font-size:22px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+  /* 効果カード（金）*/
+  .mc.eff{border-color:#d6b24a;background:linear-gradient(180deg,#fffdf6,#fff2d6)}
+  .mc.eff .em{font-size:18px}
+  .mc.eff .badge{position:absolute;top:3px;right:3px;background:#a67c00;color:#fff;
+     font-size:9px;font-weight:800;padding:1px 4px;border-radius:6px}
+  /* 能力カード（スレート）*/
+  .mc.abi{border-color:#7c93a6;background:linear-gradient(180deg,#f7fafc,#e7eff4)}
+  .mc.abi .em{font-size:18px}
+  /* 使用済み（相手の捨て札）は小さめ・淡色 */
+  .mc.used{width:auto;min-height:0;flex-direction:row;gap:5px;padding:5px 9px;
+     border-radius:999px;opacity:.85}
+  .mc.used .em{font-size:14px} .mc.used .nm{font-size:10px}
+  /* ---- クリックで選ぶカード（プロンプト用）---- */
+  .mc.pick{cursor:pointer;width:64px;min-height:82px;
+     transition:transform .07s ease,box-shadow .12s ease,border-color .12s ease}
+  .mc.pick .em{font-size:26px} .mc.pick .nm{font-size:11px}
+  .mc.pick:hover{transform:translateY(-4px);
+     box-shadow:0 8px 18px var(--glow),0 0 0 2px var(--accent)}
+  .mc.pick:active{transform:translateY(-1px)}
+  /* 手だけのカード(guess用) */
+  .mc.hand{border-color:var(--accent)}
+  /* 色スウォッチ(guess色用) */
+  .mc.swatch{color:#fff;border:none}
+  .mc.swatch .nm{color:#fff;font-size:14px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mc.swatch.aka{background:var(--aka)} .mc.swatch.midori{background:var(--midori)}
+  .mc.swatch.ao{background:var(--ao)}
   #log{height:220px;overflow:auto;font-size:13px;line-height:1.6}
   #log .l{padding:2px 0;border-bottom:1px dashed #cdeaf1}
   #prompt{min-height:120px}
@@ -395,7 +454,7 @@ PAGE = r"""<!doctype html>
   <div>
     <div class="card" style="margin-bottom:16px">
       <h2>盤面</h2>
-      <div id="board">接続中…</div>
+      <div id="board"><div class="placeholder">接続中…</div></div>
     </div>
     <div class="card">
       <h2>実況ログ</h2>
@@ -484,15 +543,127 @@ function colorClass(label){
   return '';
 }
 
-function renderBoard(lines){
-  // 得点・ターンを抽出してスコアボードへ、全文はboardへ
-  el('board').textContent = lines.join('\n');
-  for(const ln of lines){
-    let m = ln.match(/ターン\s*(\d+\/\d+)/); if(m) el('turnLbl').textContent='ターン '+m[1];
-    m = ln.match(/あなた\((.+?)\):\s*(\d+)点\s+相手\((.+?)\):\s*(\d+)点/);
-    if(m){ el('meName').textContent='あなた('+m[1]+')'; el('meScore').textContent=m[2];
-           el('oppName').textContent=m[3]; el('oppScore').textContent=m[4]; }
-  }
+// ---- 盤面(GUI): カード画像を模したミニカードで描画 --------------------
+const HAND_EMOJI={'グー':'✊','チョキ':'✌️','パー':'🖐'};
+const COLOR_KEY ={'赤':'aka','緑':'midori','青':'ao'};
+const COLOR_LTR ={'赤':'R','緑':'G','青':'B'};
+const ABILITY_INFO={
+  show_hand:{icon:'👁️',name:'覗き見'},
+  guess_hand:{icon:'🎯',name:'探偵(手)'},
+  guess_hand_color:{icon:'🎯',name:'探偵(手+色)'},
+  guard:{icon:'🛡️',name:'盾'},
+};
+function esc(s){return String(s).replace(/[&<>"']/g,
+  m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+// RPSミニカード（表）
+function rpsCardHTML(c,used){
+  const rev = c.revealed
+    ? '<span class="rev-tag">開示中</span>' : '';
+  return `<div class="mc rps ${COLOR_KEY[c.color]}${c.revealed?' rev':''}${used?' used':''}">
+    <span class="em">${HAND_EMOJI[c.hand]}</span>
+    <span class="nm">${esc(c.hand)}</span>
+    <span class="cc">${COLOR_LTR[c.color]}</span>${rev}</div>`;
+}
+// カード裏（非公開）
+function backHTML(){ return '<div class="mc back"><span class="q">?</span></div>'; }
+// 効果カード
+function effectCardHTML(hand,used){
+  return `<div class="mc eff${used?' used':''}">
+    <span class="em">${HAND_EMOJI[hand]}</span>
+    <span class="nm">${esc(hand)}で勝つ</span>
+    ${used?'':'<span class="badge">+1</span>'}</div>`;
+}
+// 能力カード
+function abilityCardHTML(a,used){
+  const info=ABILITY_INFO[a]||{icon:'❓',name:a};
+  return `<div class="mc abi${used?' used':''}">
+    <span class="em">${info.icon}</span>
+    <span class="nm">${esc(info.name)}</span></div>`;
+}
+// 手だけのカード（guess: 手の予想）
+function handCardHTML(hand){
+  return `<div class="mc hand"><span class="em">${HAND_EMOJI[hand]}</span>
+    <span class="nm">${esc(hand)}</span></div>`;
+}
+// 色スウォッチ（guess: 色の予想）
+function colorCardHTML(color){
+  return `<div class="mc swatch ${COLOR_KEY[color]}">
+    <span class="cc">${COLOR_LTR[color]}</span><span class="nm">${esc(color)}</span></div>`;
+}
+function row(label,inner,emptyText){
+  const body = inner
+    ? `<div class="cards">${inner}</div>`
+    : `<div class="cards empty">${emptyText||'なし'}</div>`;
+  return `<div class="brow"><div class="lbl">${label}</div>${body}</div>`;
+}
+
+function renderView(v){
+  // スコアボード
+  el('turnLbl').textContent = 'ターン '+v.turn+'/'+v.total;
+  el('meName').textContent  = 'あなた('+v.me.name+')';
+  el('meScore').textContent = v.me.score;
+  el('oppName').textContent = v.opp.name;
+  el('oppScore').textContent= v.opp.score;
+
+  const me=v.me, opp=v.opp;
+  let h='';
+
+  // ===== 相手ゾーン =====
+  h+='<div class="zone opp"><div class="zonehead"><span>🙎 相手 '+esc(opp.name)
+    +'</span><span class="sc">'+opp.score+'点</span></div>';
+  h+=row('公開済み本命',
+      opp.public.map(c=>rpsCardHTML(c,false)).join(''),
+      'まだなし');
+  h+=row('非公開(手札+封印)',
+      Array.from({length:opp.hidden},backHTML).join('')
+        + '<div class="cards empty" style="padding-left:2px">残り '+opp.hidden+'枚</div>',
+      '0枚');
+  if(opp.revealed.length)
+    h+=row('開示中の札', opp.revealed.map(c=>rpsCardHTML(c,false)).join(''));
+  const oppUsed = opp.effect_used.map(x=>effectCardHTML(x,true)).join('')
+                + opp.ability_used.map(x=>abilityCardHTML(x,true)).join('');
+  h+=row('使用済み 効果/能力', oppUsed, 'まだなし');
+  h+='</div>';
+
+  // ===== 自分ゾーン =====
+  h+='<div class="zone me"><div class="zonehead"><span>🙋 あなた '+esc(me.name)
+    +'</span><span class="sc">'+me.score+'点</span></div>';
+  // 今ターン伏せているもの（自分だけ中身が見える）
+  const turnCards =
+      (me.seal   ? '<div class="mc rps '+COLOR_KEY[me.seal.color]
+         +'">'+ '<span class="em">'+HAND_EMOJI[me.seal.hand]+'</span>'
+         +'<span class="nm">封印</span><span class="cc">'+COLOR_LTR[me.seal.color]+'</span></div>' : '')
+    + (me.combat? '<div class="mc rps '+COLOR_KEY[me.combat.color]
+         +'">'+ '<span class="em">'+HAND_EMOJI[me.combat.hand]+'</span>'
+         +'<span class="nm">本命</span><span class="cc">'+COLOR_LTR[me.combat.color]+'</span></div>' : '');
+  if(turnCards) h+=row('今ターン(伏せ)', turnCards);
+  h+=row('RPS手札', me.rps.map(c=>rpsCardHTML(c,false)).join(''), 'なし');
+  h+=row('効果カード', me.effect.map(x=>effectCardHTML(x,false)).join(''), 'なし');
+  h+=row('能力カード', me.ability.map(x=>abilityCardHTML(x,false)).join(''), 'なし');
+  h+='</div>';
+
+  el('board').innerHTML=h;
+}
+
+// 選択肢を kind に応じたカードHTMLにする（該当なしは null → テキストボタンにフォールバック）
+function optionCardHTML(o,kind){
+  if(kind==='rps')     return rpsCardHTML({hand:o.hand,color:o.color,revealed:false},false);
+  if(kind==='effect')  return effectCardHTML(o.key,false);
+  if(kind==='ability') return abilityCardHTML(o.key,false);
+  if(kind==='hand')    return handCardHTML(o.key);
+  if(kind==='color')   return colorCardHTML(o.key);
+  return null;
+}
+// HTML文字列から要素を作り、pick(クリック選択)化して返す
+function pickEl(html,pid,key){
+  const w=document.createElement('div'); w.innerHTML=html.trim();
+  const c=w.firstElementChild; c.classList.add('pick');
+  c.setAttribute('role','button'); c.tabIndex=0;
+  const go=()=>submitChoice(pid,key);
+  c.onclick=go;
+  c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } };
+  return c;
 }
 
 function showPrompt(msg){
@@ -500,6 +671,9 @@ function showPrompt(msg){
   el('promptText').textContent = msg.text;
   const box=el('opts'); box.innerHTML='';
   (msg.options||[]).forEach(o=>{
+    const html=optionCardHTML(o,msg.kind);
+    if(html){ box.appendChild(pickEl(html,msg.pid,o.key)); return; }
+    // フォールバック: 従来のテキストボタン
     const b=document.createElement('div');
     b.className='opt '+colorClass(o.label);
     b.textContent=o.label;
@@ -534,7 +708,10 @@ function handle(msg){
     case 'HELLO':
       gameStarted=true; el('join').style.display='none'; el('game').style.display='grid';
       addLog('▶ '+msg.text); clearPrompt(true); break;
-    case 'STATE': renderBoard(msg.lines||[]); break;
+    case 'STATE':
+      if(msg.view) renderView(msg.view);
+      else el('board').textContent=(msg.lines||[]).join('\n');
+      break;
     case 'PROMPT': showPrompt(msg); break;
     case 'GAMEOVER': over=true; addLog('■ '+msg.text); showBanner(msg.text); break;
   }
