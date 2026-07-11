@@ -64,21 +64,44 @@ def _start_match_if_ready():
             daemon=True).start()
 
 
+# ポーリングが途絶えたら切断とみなすまでの秒数（ブラウザは約0.7秒間隔でポーリング）。
+DISCONNECT_TIMEOUT = 15
+
+
+def _abort_match(dead_rec):
+    """対戦中セッション dead_rec が切断された時、対戦相手も含めて対戦を終了させる。
+    両者のキューへ「切断者の名前を持つ」シグナルを送るので、どちらの手番待ちでも
+    即座に中断できる。必ず LOCK を取得した状態で呼ぶこと。"""
+    sig = engine.Disconnected(dead_rec["session"].name)
+    mid = dead_rec.get("match")
+    partners = [r for r in SESSIONS.values()
+                if mid is not None and r.get("match") == mid] or [dead_rec]
+    for r in partners:
+        r["session"].q.put(sig)
+
+
+def _drop_session(token, rec):
+    """セッションを切断扱いにし、待機列/対戦から外す。LOCK 内で呼ぶこと。"""
+    if rec.get("dead"):
+        return
+    rec["dead"] = True
+    if token in WAITING:
+        WAITING.remove(token)
+    if rec.get("matched"):
+        _abort_match(rec)
+
+
 def reaper():
     """一定時間ポーリングが来ないセッションを切断扱いにする。"""
     while True:
-        time.sleep(5)
+        time.sleep(3)
         now = time.time()
         with LOCK:
             for token, rec in list(SESSIONS.items()):
                 if rec.get("dead"):
                     continue
-                if now - rec["last"] > 20:
-                    rec["dead"] = True
-                    if token in WAITING:
-                        WAITING.remove(token)
-                    if rec.get("matched"):
-                        rec["session"].q.put(engine.DISCONNECT)
+                if now - rec["last"] > DISCONNECT_TIMEOUT:
+                    _drop_session(token, rec)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -216,6 +239,17 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True})
             return
 
+        if parsed.path == "/leave":
+            # ブラウザを閉じた/離脱した時に sendBeacon で即時通知される。
+            # reaper のタイムアウトを待たずにその場で対戦を終了させる。
+            token = str(data.get("token") or "")
+            with LOCK:
+                rec = SESSIONS.get(token)
+                if rec:
+                    _drop_session(token, rec)
+            self._json({"ok": True})
+            return
+
         self._json({"error": "not found"}, 404)
 
 
@@ -229,21 +263,26 @@ PAGE = r"""<!doctype html>
 <title>RPS Extend Online</title>
 <style>
   :root{
-    --bg:#0f1220; --panel:#1a1f36; --panel2:#232a4a; --ink:#e9ecf6;
-    --muted:#9aa3c7; --accent:#ffcf5c; --line:#333c66;
-    --aka:#e0524b; --midori:#3aa657; --ao:#3f7de0;
+    /* みずいろ基調のライトテーマ（home.sumyuu.com のパステル水色イメージ） */
+    --bg:#e9fbff; --bg2:#d6f4fb;
+    --panel:#ffffff; --panel2:#eef9fd; --ink:#123640;
+    --muted:#5c8895; --accent:#00c2d6; --accent-ink:#053b42; --line:#c3e9f2;
+    --glow:rgba(0,194,214,.16);
+    --aka:#e0524b; --midori:#2f9e52; --ao:#2f74d0;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",
-       "Meiryo",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-  header{padding:14px 18px;background:linear-gradient(90deg,#1b2140,#141830);
+  body{margin:0;min-height:100vh;font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",
+       "Meiryo",system-ui,sans-serif;color:var(--ink);
+       background:linear-gradient(180deg,var(--bg),var(--bg2)) fixed}
+  header{padding:14px 18px;background:linear-gradient(90deg,#ccf4fb,#e9fbff);
          border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
   header h1{font-size:18px;margin:0;letter-spacing:.5px}
   header .tag{font-size:12px;color:var(--muted)}
   .wrap{max-width:1000px;margin:0 auto;padding:18px;display:grid;
         grid-template-columns:1.15fr .85fr;gap:16px}
   @media(max-width:820px){.wrap{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;
+        box-shadow:0 6px 20px var(--glow)}
   .scoreboard{display:flex;justify-content:space-between;align-items:center;gap:10px;
         background:var(--panel2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
   .scoreboard .me{color:var(--accent);font-weight:700}
@@ -252,10 +291,10 @@ PAGE = r"""<!doctype html>
   h2{font-size:14px;color:var(--muted);margin:2px 0 10px;font-weight:600;
      text-transform:uppercase;letter-spacing:1px}
   #board{white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-     font-size:12.5px;line-height:1.5;background:#11162b;border-radius:10px;padding:12px;
+     font-size:12.5px;line-height:1.5;background:#f2fcff;border-radius:10px;padding:12px;
      border:1px solid var(--line);max-height:340px;overflow:auto}
   #log{height:220px;overflow:auto;font-size:13px;line-height:1.6}
-  #log .l{padding:2px 0;border-bottom:1px dashed #2a315480}
+  #log .l{padding:2px 0;border-bottom:1px dashed #cdeaf1}
   #prompt{min-height:120px}
   #promptText{font-size:15px;font-weight:700;margin-bottom:12px}
   .opts{display:flex;flex-wrap:wrap;gap:10px}
@@ -272,22 +311,58 @@ PAGE = r"""<!doctype html>
   /* join */
   #join{max-width:460px;margin:60px auto;text-align:center}
   #join input{font-size:16px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
-     background:#11162b;color:var(--ink);width:100%;margin:14px 0}
-  .btn{cursor:pointer;background:var(--accent);color:#20233a;border:none;border-radius:10px;
-     padding:12px 22px;font-size:16px;font-weight:800}
+     background:#f7feff;color:var(--ink);width:100%;margin:14px 0}
+  #join input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+  .btn{cursor:pointer;background:var(--accent);color:#fff;border:none;border-radius:10px;
+     padding:12px 22px;font-size:16px;font-weight:800;box-shadow:0 4px 12px var(--glow)}
+  .btn:hover{filter:brightness(1.05)}
   .btn:disabled{opacity:.5;cursor:default}
   #banner{display:none;margin-top:12px;padding:14px;border-radius:12px;font-weight:800;
      font-size:16px;text-align:center;white-space:pre-wrap}
-  .win{background:#1e3a24;color:#8ff0a4;border:1px solid #2f7d43}
-  .lose{background:#3a1e22;color:#f0989b;border:1px solid #7d2f36}
-  .draw{background:#2a2f4a;color:#c8cffb;border:1px solid #47507d}
+  .win{background:#e2f9ea;color:#1f7a3a;border:1px solid #a7e5bd}
+  .lose{background:#fdeaec;color:#b23a44;border:1px solid #f2b8be}
+  .draw{background:#e4f6fb;color:#1f6675;border:1px solid #b6e2ee}
   .rule{color:var(--midori)} .rule.b{color:var(--aka)}
+  /* ルール説明ボタン / モーダル */
+  .ghost{cursor:pointer;margin-left:auto;background:#fff;color:var(--accent-ink);
+     border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;
+     font-weight:700;box-shadow:0 3px 10px var(--glow)}
+  .ghost:hover{border-color:var(--accent)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,45,55,.35);
+     display:none;align-items:flex-start;justify-content:center;padding:24px;z-index:50;
+     overflow:auto}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+     max-width:640px;width:100%;padding:22px 24px;box-shadow:0 18px 50px rgba(0,120,140,.25);
+     margin:auto}
+  .modal-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .modal-head h2{margin:0;font-size:19px;color:var(--ink);text-transform:none;letter-spacing:0}
+  .modal .close{margin-left:auto;cursor:pointer;background:var(--panel2);border:1px solid var(--line);
+     border-radius:9px;width:34px;height:34px;font-size:18px;color:var(--muted);line-height:1}
+  .modal .close:hover{color:var(--ink);border-color:var(--accent)}
+  .rules-body{font-size:14px;line-height:1.7;color:var(--ink)}
+  .rules-body h3{font-size:15px;margin:18px 0 6px;color:var(--accent-ink);
+     border-left:4px solid var(--accent);padding-left:8px}
+  .rules-body p{margin:6px 0}
+  .rules-body ul,.rules-body ol{margin:6px 0;padding-left:22px}
+  .rules-body li{margin:4px 0}
+  .rules-body .tip{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+     padding:10px 12px;margin:10px 0}
+  .rules-body .key{background:#fff7dd;border:1px solid #f0e0a0;border-radius:10px;
+     padding:10px 12px;margin:10px 0}
+  .rules-body b{color:var(--accent-ink)}
+  .pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;
+     padding:1px 9px;margin-right:4px;border:1px solid var(--line)}
+  .pill.aka{color:var(--aka);border-color:var(--aka)}
+  .pill.midori{color:var(--midori);border-color:var(--midori)}
+  .pill.ao{color:var(--ao);border-color:var(--ao)}
 </style>
 </head>
 <body>
 <header>
   <h1>✊✌️🖐 RPS Extend <span style="color:var(--accent)">Online</span></h1>
   <span class="tag">中央サーバー方式 / ブラウザGUI</span>
+  <button class="ghost" id="rulesBtn">📖 ルール説明</button>
 </header>
 
 <!-- 参加画面 -->
@@ -328,6 +403,67 @@ PAGE = r"""<!doctype html>
     </div>
   </div>
 </section>
+
+<!-- ルール説明モーダル（初めての人向け） -->
+<div class="modal-overlay" id="rules">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>🔰 はじめての方へ — 遊び方</h2>
+      <button class="close" id="rulesClose" title="閉じる">×</button>
+    </div>
+    <div class="rules-body">
+      <p>「じゃんけん」に<b>読み合い</b>と<b>情報戦</b>を足した、2人用の対戦ゲームです。
+         運の要素はほぼゼロ。カードは最初から全部持っています。</p>
+
+      <h3>🎯 目的</h3>
+      <p><b>6ターン</b>対戦して、<b>得点が高い方の勝ち</b>。同点なら「サドンデス」で決着します。</p>
+
+      <h3>🃏 使うカード（3種類）</h3>
+      <ul>
+        <li><b>RPSカード（9枚）</b>：グー・チョキ・パー ×
+          <span class="pill aka">赤</span><span class="pill midori">緑</span><span class="pill ao">青</span>。
+          色は勝敗に関係なく、読み合いのための目印です。</li>
+        <li><b>効果カード（6枚）</b>：「◯◯で勝つと +1点」。毎ターン1枚を<b>公開して</b>使います。</li>
+        <li><b>能力カード（6枚）</b>：相手の手札を覗く／相手の伏せ札を当てる／守る。毎ターン1枚使います。</li>
+      </ul>
+
+      <div class="key">
+        <b>いちばん大事：「封印」と「本命」は別のカードです。</b><br>
+        ・<b>封印</b>＝毎ターン1枚伏せる“おとり”。相手に当てられると失点のリスクですが、
+          <b>ターン終わりに手札へ戻り、減りません</b>。<br>
+        ・<b>本命</b>＝実際にじゃんけんする1枚。伏せて同時に公開し、<b>使ったら捨てます（減る）</b>。
+      </div>
+
+      <h3>🔁 1ターンの流れ</h3>
+      <ol>
+        <li><b>封印</b>：RPSを1枚伏せる（おとり。最後まで見せません）</li>
+        <li><b>効果カード</b>：「◯で勝てば+1」を1枚公開して使う</li>
+        <li><b>能力カード</b>：覗き見／guess（伏せ札当て）／guard（守り）から1枚</li>
+        <li><b>本命</b>：実際に戦うRPSを1枚、両者<b>同時に</b>伏せる</li>
+        <li><b>公開・じゃんけん</b>：本命だけ公開。勝った方 +1</li>
+        <li><b>guess判定</b>：相手の封印を当てていれば加点（守られていなければ）</li>
+        <li><b>後始末</b>：本命と使ったカードを捨て、封印は手札へ戻す</li>
+      </ol>
+
+      <h3>🏆 点の入り方</h3>
+      <ul>
+        <li>本命のじゃんけんに<b>勝つ</b> → <b>+1</b></li>
+        <li>勝った手が、公開した<b>効果カードの宣言と同じ</b> → さらに <b>+1</b></li>
+        <li><b>guess</b>で相手の封印を当てる → 手だけ <b>+1</b>／手＋色 <b>+2</b>
+            （序盤の1〜3ターンは手＋色が <b>+3</b>）</li>
+        <li><b>guard</b>中に相手が guess してきたら、それを無効化して <b>+1</b></li>
+      </ul>
+
+      <h3>🎲 サドンデス（同点のとき）</h3>
+      <p>残ったRPSを封印なしで1枚ずつ出し、先に勝った方の勝ち。全部あいこなら引き分けです。</p>
+
+      <div class="tip">
+        💡 <b>コツ</b>：相手の<b>本命は毎回公開</b>されるので、覚えておくと相手の残り手が読めます。
+        封印は「一度見せた札をあえて伏せる」のも有効。読み切られない立ち回りを目指しましょう。
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 let TOKEN=null, polling=false, gameStarted=false, over=false;
@@ -431,6 +567,21 @@ el('joinBtn').onclick=async()=>{
   }
 };
 el('name').addEventListener('keydown',e=>{ if(e.key==='Enter') el('joinBtn').click(); });
+
+// ルール説明モーダルの開閉
+function openRules(){ el('rules').classList.add('open'); }
+function closeRules(){ el('rules').classList.remove('open'); }
+el('rulesBtn').onclick=openRules;
+el('rulesClose').onclick=closeRules;
+el('rules').addEventListener('click',e=>{ if(e.target===el('rules')) closeRules(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeRules(); });
+
+// タブを閉じる/離脱する時にサーバーへ即時通知し、対戦を終了させる。
+window.addEventListener('pagehide',()=>{
+  if(TOKEN && !over){
+    try{ navigator.sendBeacon('/leave', JSON.stringify({token:TOKEN})); }catch(e){}
+  }
+});
 </script>
 </body>
 </html>

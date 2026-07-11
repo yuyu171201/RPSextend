@@ -47,6 +47,11 @@ class Session:
         """PROMPTへの回答を待つ。allowedに無い値は無視して待ち続ける。"""
         while True:
             item = self.q.get()
+            # 相手の切断で対戦を中断する。Disconnected インスタンスが
+            # 投入された場合は切断者の名前を保持したまま送出する
+            # （自分の手番でなくても中断できるようにするため）。
+            if isinstance(item, Disconnected):
+                raise item
             if item is DISCONNECT:
                 raise Disconnected(self.name)
             if not isinstance(item, dict):
