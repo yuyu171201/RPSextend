@@ -318,7 +318,9 @@ PAGE = r"""<!doctype html>
   .mc.rps.aka{border-color:var(--aka)}   .mc.rps.aka .cc{background:var(--aka)}
   .mc.rps.midori{border-color:var(--midori)} .mc.rps.midori .cc{background:var(--midori)}
   .mc.rps.ao{border-color:var(--ao)}     .mc.rps.ao .cc{background:var(--ao)}
-  .mc.rps.rev{box-shadow:0 0 0 2px var(--accent),0 2px 6px rgba(0,60,80,.12)}
+  /* 開示済み(上下マーカー): カードを180°反転して「公開済み」を表す（ゲーム仕様） */
+  .mc.rps.rev{transform:rotate(180deg);
+     box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,60,80,.16)}
   .mc .rev-tag{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
      background:var(--accent);color:#fff;font-size:8.5px;font-weight:800;line-height:1;
      padding:2px 5px;border-radius:6px;white-space:nowrap}
@@ -352,6 +354,17 @@ PAGE = r"""<!doctype html>
   .mc.swatch .nm{color:#fff;font-size:14px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
   .mc.swatch.aka{background:var(--aka)} .mc.swatch.midori{background:var(--midori)}
   .mc.swatch.ao{background:var(--ao)}
+  /* ---- 盤面クリックで選ぶ: 選択可能な札を強調 ---- */
+  .zone.me.selecting .mc:not(.sel){opacity:.4}
+  .mc.sel{cursor:pointer;animation:selpulse 1.3s ease-in-out infinite}
+  .mc.sel:hover{transform:translateY(-5px);
+     box-shadow:0 10px 22px var(--glow),0 0 0 3px var(--accent)!important}
+  @keyframes selpulse{
+    0%,100%{box-shadow:0 0 0 2px var(--accent),0 4px 10px var(--glow)}
+    50%{box-shadow:0 0 0 4px var(--accent),0 10px 20px var(--glow)}}
+  .pickhint{font-size:13px;color:var(--accent-ink);background:var(--panel2);
+     border:1px dashed var(--accent);border-radius:10px;padding:10px 12px;line-height:1.5}
+  .pickhint b{color:var(--accent-ink)}
   #log{height:220px;overflow:auto;font-size:13px;line-height:1.6}
   #log .l{padding:2px 0;border-bottom:1px dashed #cdeaf1}
   #prompt{min-height:120px}
@@ -526,6 +539,8 @@ PAGE = r"""<!doctype html>
 
 <script>
 let TOKEN=null, polling=false, gameStarted=false, over=false;
+let lastView=null;        // 直近の盤面データ（盤面クリック選択の再描画に使う）
+let activePrompt=null;    // 盤面クリック選択中のプロンプト {pid, source, allowed:Set}
 
 function el(id){return document.getElementById(id)}
 function addLog(text){
@@ -556,11 +571,18 @@ const ABILITY_INFO={
 function esc(s){return String(s).replace(/[&<>"']/g,
   m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
-// RPSミニカード（表）
-function rpsCardHTML(c,used){
-  const rev = c.revealed
-    ? '<span class="rev-tag">開示中</span>' : '';
-  return `<div class="mc rps ${COLOR_KEY[c.color]}${c.revealed?' rev':''}${used?' used':''}">
+// 共通: opts={used,sel,key} を class / data-key に反映
+function _cls(base,opts){
+  const c=[...base]; if(opts.used)c.push('used'); if(opts.sel)c.push('sel'); return c.join(' ');
+}
+function _data(opts){ return opts.key!=null ? ` data-key="${esc(opts.key)}"` : ''; }
+
+// RPSミニカード（表）。開示済み(revealed)は上下反転で表示（ゲームの上下マーカー）。
+function rpsCardHTML(c,opts){
+  opts=opts||{};
+  const base=['mc','rps',COLOR_KEY[c.color]]; if(c.revealed) base.push('rev');
+  const rev = c.revealed ? '<span class="rev-tag">開示</span>' : '';
+  return `<div class="${_cls(base,opts)}"${_data(opts)}>
     <span class="em">${HAND_EMOJI[c.hand]}</span>
     <span class="nm">${esc(c.hand)}</span>
     <span class="cc">${COLOR_LTR[c.color]}</span>${rev}</div>`;
@@ -568,16 +590,18 @@ function rpsCardHTML(c,used){
 // カード裏（非公開）
 function backHTML(){ return '<div class="mc back"><span class="q">?</span></div>'; }
 // 効果カード
-function effectCardHTML(hand,used){
-  return `<div class="mc eff${used?' used':''}">
+function effectCardHTML(hand,opts){
+  opts=opts||{};
+  return `<div class="${_cls(['mc','eff'],opts)}"${_data(opts)}>
     <span class="em">${HAND_EMOJI[hand]}</span>
     <span class="nm">${esc(hand)}で勝つ</span>
-    ${used?'':'<span class="badge">+1</span>'}</div>`;
+    ${opts.used?'':'<span class="badge">+1</span>'}</div>`;
 }
 // 能力カード
-function abilityCardHTML(a,used){
+function abilityCardHTML(a,opts){
+  opts=opts||{};
   const info=ABILITY_INFO[a]||{icon:'❓',name:a};
-  return `<div class="mc abi${used?' used':''}">
+  return `<div class="${_cls(['mc','abi'],opts)}"${_data(opts)}>
     <span class="em">${info.icon}</span>
     <span class="nm">${esc(info.name)}</span></div>`;
 }
@@ -599,6 +623,7 @@ function row(label,inner,emptyText){
 }
 
 function renderView(v){
+  lastView = v;
   // スコアボード
   el('turnLbl').textContent = 'ターン '+v.turn+'/'+v.total;
   el('meName').textContent  = 'あなた('+v.me.name+')';
@@ -607,27 +632,32 @@ function renderView(v){
   el('oppScore').textContent= v.opp.score;
 
   const me=v.me, opp=v.opp;
+  // 盤面クリック選択が有効か（source と allowed）
+  const ap = activePrompt;
+  const canSel = (source,key)=> ap && ap.source===source && ap.allowed.has(key);
   let h='';
 
   // ===== 相手ゾーン =====
   h+='<div class="zone opp"><div class="zonehead"><span>🙎 相手 '+esc(opp.name)
     +'</span><span class="sc">'+opp.score+'点</span></div>';
   h+=row('公開済み本命',
-      opp.public.map(c=>rpsCardHTML(c,false)).join(''),
+      opp.public.map(c=>rpsCardHTML(c)).join(''),
       'まだなし');
   h+=row('非公開(手札+封印)',
       Array.from({length:opp.hidden},backHTML).join('')
         + '<div class="cards empty" style="padding-left:2px">残り '+opp.hidden+'枚</div>',
       '0枚');
   if(opp.revealed.length)
-    h+=row('開示中の札', opp.revealed.map(c=>rpsCardHTML(c,false)).join(''));
-  const oppUsed = opp.effect_used.map(x=>effectCardHTML(x,true)).join('')
-                + opp.ability_used.map(x=>abilityCardHTML(x,true)).join('');
+    h+=row('開示された札',
+        opp.revealed.map(c=>rpsCardHTML({hand:c.hand,color:c.color,revealed:true})).join(''));
+  const oppUsed = opp.effect_used.map(x=>effectCardHTML(x,{used:true})).join('')
+                + opp.ability_used.map(x=>abilityCardHTML(x,{used:true})).join('');
   h+=row('使用済み 効果/能力', oppUsed, 'まだなし');
   h+='</div>';
 
   // ===== 自分ゾーン =====
-  h+='<div class="zone me"><div class="zonehead"><span>🙋 あなた '+esc(me.name)
+  const meSelecting = ap && ap.source!=='panel' ? ' selecting' : '';
+  h+='<div class="zone me'+meSelecting+'"><div class="zonehead"><span>🙋 あなた '+esc(me.name)
     +'</span><span class="sc">'+me.score+'点</span></div>';
   // 今ターン伏せているもの（自分だけ中身が見える）
   const turnCards =
@@ -638,9 +668,19 @@ function renderView(v){
          +'">'+ '<span class="em">'+HAND_EMOJI[me.combat.hand]+'</span>'
          +'<span class="nm">本命</span><span class="cc">'+COLOR_LTR[me.combat.color]+'</span></div>' : '');
   if(turnCards) h+=row('今ターン(伏せ)', turnCards);
-  h+=row('RPS手札', me.rps.map(c=>rpsCardHTML(c,false)).join(''), 'なし');
-  h+=row('効果カード', me.effect.map(x=>effectCardHTML(x,false)).join(''), 'なし');
-  h+=row('能力カード', me.ability.map(x=>abilityCardHTML(x,false)).join(''), 'なし');
+  // RPS手札 / 効果 / 能力: プロンプト中は該当ゾーンの札だけ選択可能に
+  h+=row('RPS手札', me.rps.map(c=>{
+      const key=c.hand+c.color, sel=canSel('rps_hand',key);
+      return rpsCardHTML(c,{sel, key: sel?key:undefined});
+    }).join(''), 'なし');
+  h+=row('効果カード', me.effect.map(x=>{
+      const sel=canSel('effect',x);
+      return effectCardHTML(x,{sel, key: sel?x:undefined});
+    }).join(''), 'なし');
+  h+=row('能力カード', me.ability.map(x=>{
+      const sel=canSel('ability',x);
+      return abilityCardHTML(x,{sel, key: sel?x:undefined});
+    }).join(''), 'なし');
   h+='</div>';
 
   el('board').innerHTML=h;
@@ -648,9 +688,9 @@ function renderView(v){
 
 // 選択肢を kind に応じたカードHTMLにする（該当なしは null → テキストボタンにフォールバック）
 function optionCardHTML(o,kind){
-  if(kind==='rps')     return rpsCardHTML({hand:o.hand,color:o.color,revealed:false},false);
-  if(kind==='effect')  return effectCardHTML(o.key,false);
-  if(kind==='ability') return abilityCardHTML(o.key,false);
+  if(kind==='rps')     return rpsCardHTML({hand:o.hand,color:o.color,revealed:false});
+  if(kind==='effect')  return effectCardHTML(o.key);
+  if(kind==='ability') return abilityCardHTML(o.key);
   if(kind==='hand')    return handCardHTML(o.key);
   if(kind==='color')   return colorCardHTML(o.key);
   return null;
@@ -670,6 +710,19 @@ function showPrompt(msg){
   el('waiting').style.display='none';
   el('promptText').textContent = msg.text;
   const box=el('opts'); box.innerHTML='';
+
+  // 盤面クリック型（自分の手札/効果/能力を直接クリックして選ぶ）
+  if(msg.source && msg.source!=='panel'){
+    activePrompt = {pid:msg.pid, source:msg.source,
+                    allowed:new Set((msg.options||[]).map(o=>o.key))};
+    box.innerHTML='<div class="pickhint">👇 盤面右の <b>あなた</b> ゾーンで、'
+      +'<b>光っているカード</b>をクリックして選んでください</div>';
+    if(lastView) renderView(lastView);   // 盤面を選択可能状態に再描画
+    return;
+  }
+
+  // パネル型（盤面に無い選択＝guessの手/色・覗き見の相手指定）はカード選択肢を出す
+  activePrompt = null;
   (msg.options||[]).forEach(o=>{
     const html=optionCardHTML(o,msg.kind);
     if(html){ box.appendChild(pickEl(html,msg.pid,o.key)); return; }
@@ -680,6 +733,17 @@ function showPrompt(msg){
     b.onclick=()=>{ submitChoice(msg.pid, o.key); };
     box.appendChild(b);
   });
+}
+
+// 盤面カードのクリックで選択を確定（イベント委譲）
+function onBoardClick(e){
+  if(!activePrompt) return;
+  const card=e.target.closest('.mc.sel[data-key]');
+  if(!card) return;
+  const pid=activePrompt.pid, key=card.getAttribute('data-key');
+  activePrompt=null;
+  submitChoice(pid,key);      // waiting表示＋送信
+  if(lastView) renderView(lastView);   // ハイライトを消す
 }
 
 function clearPrompt(waiting){
@@ -713,7 +777,7 @@ function handle(msg){
       else el('board').textContent=(msg.lines||[]).join('\n');
       break;
     case 'PROMPT': showPrompt(msg); break;
-    case 'GAMEOVER': over=true; addLog('■ '+msg.text); showBanner(msg.text); break;
+    case 'GAMEOVER': over=true; activePrompt=null; addLog('■ '+msg.text); showBanner(msg.text); break;
   }
 }
 
@@ -744,6 +808,9 @@ el('joinBtn').onclick=async()=>{
   }
 };
 el('name').addEventListener('keydown',e=>{ if(e.key==='Enter') el('joinBtn').click(); });
+
+// 盤面カードのクリックで選択（イベント委譲: 中身が再描画されても効く）
+el('board').addEventListener('click', onBoardClick);
 
 // ルール説明モーダルの開閉
 function openRules(){ el('rules').classList.add('open'); }
